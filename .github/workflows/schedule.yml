@@ -30,14 +30,16 @@ jobs:
           print(" ".join(c))
           PY
           )
-          echo "Season candidates: $codes"
+          echo "::warning::Season candidates: $codes"
           ok=""
           for c in $codes; do
             for base in http://www.eibispace.de/dx https://www.eibispace.de/dx; do
               # public read-only schedule file; the site's certificate chain is outdated
-              if curl -fsSL -k --retry 3 -o raw.csv "$base/sked-$c.csv"; then
+              code=$(curl -sSL -k --retry 2 -A "Mozilla/5.0" -o raw.csv -w '%{http_code}' "$base/sked-$c.csv" 2>curl.err || true)
+              echo "::warning::$base/sked-$c.csv -> HTTP $code $(head -c 200 curl.err)"
+              if [ "$code" = "200" ]; then
                 n=$(awk -F';' '$6 ~ /(^|[,\/ ])A([,\/ ]|$)/' raw.csv | wc -l)
-                echo "$base/sked-$c.csv -> $n Arabic lines"
+                echo "::warning::$base/sked-$c.csv -> $n Arabic lines, $(wc -c < raw.csv) bytes, first: $(head -c 120 raw.csv | tr -d '\r\n')"
                 if [ "$n" -ge 10 ]; then ok="$c"; break 2; fi
               fi
             done
