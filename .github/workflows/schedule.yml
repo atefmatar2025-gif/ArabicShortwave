@@ -45,6 +45,7 @@ jobs:
             done
           done
           [ -n "$ok" ] || { echo "No schedule found"; exit 1; }
+          mkdir -p data
           { echo "# source=EiBi sked-$ok"; awk -F';' '$6 ~ /(^|[,\/ ])A([,\/ ]|$)/' raw.csv; } > data/arabic.csv
           rm raw.csv
           wc -l data/arabic.csv
