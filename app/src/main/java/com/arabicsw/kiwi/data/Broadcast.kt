@@ -68,14 +68,15 @@ data class Broadcast(
         return if (m >= startMin) base else base.minusDays(1)
     }
 
-    fun utcRange(): String = "${hhmm(startMin)}–${if (endMin == 1440) "24:00" else hhmm(endMin % 1440)} UTC"
+    /** Wrapped in a left-to-right isolate so "14:00–14:30" isn't reversed inside Arabic text. */
+    fun utcRange(): String = ltr("${hhmm(startMin)}–${if (endMin == 1440) "24:00" else hhmm(endMin % 1440)} UTC")
 
     fun localRange(zone: ZoneId = ZoneId.systemDefault(), ref: ZonedDateTime? = null): String {
         val start = ref ?: ZonedDateTime.now(ZoneOffset.UTC).toLocalDate()
             .atStartOfDay(ZoneOffset.UTC).plusMinutes(startMin.toLong())
         val s = start.withZoneSameInstant(zone)
         val e = s.plusMinutes(durationMin.toLong())
-        return "${s.format(HM)}–${e.format(HM)}"
+        return ltr("${s.format(HM)}–${e.format(HM)}")
     }
 
     fun daysLabel(): String {
@@ -87,6 +88,8 @@ data class Broadcast(
 
     companion object {
         private val HM = DateTimeFormatter.ofPattern("HH:mm")
+
+        fun ltr(t: String): String = "\u2066$t\u2069"
 
         fun hhmm(min: Int): String = String.format(Locale.US, "%02d:%02d", min / 60, min % 60)
 

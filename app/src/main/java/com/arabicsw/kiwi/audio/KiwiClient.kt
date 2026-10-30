@@ -194,9 +194,11 @@ class KiwiClient(
         t.start()
     }
 
-    private fun audioLoop(rate: Int) {
+    private fun buildTrack(rate: Int): AudioTrack {
         val minBuf = AudioTrack.getMinBufferSize(rate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT)
-        val track = AudioTrack.Builder()
+        // must be a positive multiple of the frame size (2 bytes); ≈ 1 s of audio
+        val bytes = max(if (minBuf > 0) minBuf * 4 else 0, rate * 2)
+        return AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -210,9 +212,23 @@ class KiwiClient(
                     .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                     .build()
             )
-            .setBufferSizeInBytes(max(minBuf * 4, rate))   // ≈ 0.5 s
+            .setBufferSizeInBytes(bytes)
             .setTransferMode(AudioTrack.MODE_STREAM)
             .build()
+    }
+
+    private fun audioLoop(rate: Int) {
+        val track = try {
+            buildTrack(rate)
+        } catch (e: Exception) {
+            // some devices dislike odd rates such as 12001 Hz; 12000 Hz is inaudibly different
+            try {
+                buildTrack(12000)
+            } catch (e2: Exception) {
+                fail(Failure.NO_AUDIO, "تعذّر تشغيل الصوت على هذا الجهاز: ${e2.message}")
+                return
+            }
+        }
         try {
             // pre-buffer ~0.7 s to ride over network jitter
             val pre = ArrayList<ShortArray>()
@@ -229,9 +245,11 @@ class KiwiClient(
                 track.write(blk, 0, blk.size)
             }
         } catch (_: InterruptedException) {
+        } catch (e: Exception) {
+            fail(Failure.NO_AUDIO, "خطأ في الصوت: ${e.message}")
         } finally {
             runCatching { track.pause(); track.flush(); track.stop() }
-            track.release()
+            runCatching { track.release() }
         }
     }
 
