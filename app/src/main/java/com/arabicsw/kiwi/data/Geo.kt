@@ -124,6 +124,17 @@ object Geo {
         return ARAB_WORLD
     }
 
+    /**
+     * Where the transmitter is. EiBi remarks like "/CYP" name the transmitter
+     * country when it differs from the station's home country (ITU column).
+     */
+    fun transmitterPoint(itu: String, remarks: String): LatLon? {
+        Regex("""/([A-Z]{1,3})""").find(remarks)?.groupValues?.get(1)?.let { code ->
+            countries[code]?.let { return it }
+        }
+        return countries[itu.trim()]
+    }
+
     /** Arabic description of the target area, if known. */
     fun targetLabel(target: String): String = when (target.trim()) {
         "ME" -> "الشرق الأوسط"

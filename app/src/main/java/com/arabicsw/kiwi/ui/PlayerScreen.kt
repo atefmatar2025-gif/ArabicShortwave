@@ -99,7 +99,8 @@ fun PlayerScreen(
             if (state.candidates.isNotEmpty()) {
                 item {
                     Text(
-                        "المستقبلات المرشّحة (الأقرب إلى منطقة البث أولاً)",
+                        if (state.refLabel == "من موقع الإرسال") "المستقبلات المرشّحة (الأقرب إلى موقع الإرسال أولاً)"
+                        else "المستقبلات المرشّحة (الأقرب إلى منطقة البث أولاً)",
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = 4.dp),
                     )
@@ -162,7 +163,7 @@ private fun SignalCard(s: PlayerState) {
                 Text(
                     listOfNotNull(
                         rr.rx.location.takeIf { it.isNotBlank() },
-                        "${rr.distanceKm.roundToInt()} كم من منطقة البث",
+                        "${rr.distanceKm.roundToInt()} كم ${s.refLabel}",
                         "المستخدمون ${rr.rx.users}/${rr.rx.usersMax}",
                     ).joinToString(" • "),
                     style = MaterialTheme.typography.bodySmall,

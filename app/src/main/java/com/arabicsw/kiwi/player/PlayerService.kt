@@ -44,6 +44,8 @@ data class PlayerState(
     val rssi: Float? = null,
     val weak: Boolean = false,
     val mode: String = "am",
+    /** What receiver distances are measured from (target area, or transmitter for mediumwave). */
+    val refLabel: String = "من منطقة البث",
 ) {
     val active: Boolean get() = phase != PlayerPhase.IDLE
     val current: RankedReceiver? get() = candidates.getOrNull(index)
@@ -116,7 +118,12 @@ class PlayerService : Service() {
         client?.stop(); client = null
         generation++
         autoFailovers = 0
-        target = Geo.targetPoint(tgt, itu)
+        val remarks = intent.getStringExtra(EXTRA_REMARKS).orEmpty()
+        // Mediumwave/longwave travel mostly by ground wave (especially by day), so a
+        // receiver near the transmitter hears it best. Shortwave: near the target area.
+        val tx = if (freq < 1800) Geo.transmitterPoint(itu, remarks) else null
+        target = tx ?: Geo.targetPoint(tgt, itu)
+        val refLabel = if (tx != null) "من موقع الإرسال" else "من منطقة البث"
         acquireLocks()
 
         _state.value = PlayerState(
@@ -127,6 +134,7 @@ class PlayerService : Service() {
             targetLabel = Geo.targetLabel(tgt),
             status = "جارٍ البحث عن أفضل مستقبل KiwiSDR…",
             mode = Prefs.mode(this),
+            refLabel = refLabel,
         )
 
         searchJob?.cancel()
@@ -325,6 +333,7 @@ class PlayerService : Service() {
         const val EXTRA_TARGET = "target"
         const val EXTRA_ITU = "itu"
         const val EXTRA_TIME = "time"
+        const val EXTRA_REMARKS = "remarks"
         const val EXTRA_INDEX = "index"
         const val EXTRA_MODE = "mode"
 
@@ -348,6 +357,7 @@ class PlayerService : Service() {
                 .putExtra(EXTRA_TARGET, b.target)
                 .putExtra(EXTRA_ITU, b.itu)
                 .putExtra(EXTRA_TIME, b.utcRange())
+                .putExtra(EXTRA_REMARKS, b.remarks)
 
         fun play(ctx: Context, b: Broadcast) =
             ContextCompat.startForegroundService(ctx, playIntent(ctx, b))
