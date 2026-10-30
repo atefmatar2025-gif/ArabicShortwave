@@ -22,6 +22,8 @@ import java.time.temporal.TemporalAdjusters
 object ScheduleRepository {
 
     private const val CACHE_FILE = "eibi_arabic.csv"
+    private const val MIRROR_URL =
+        "https://raw.githubusercontent.com/atefmatar2025-gif/ArabicShortwave/main/data/arabic.csv"
     private val _items = MutableStateFlow<List<Broadcast>>(emptyList())
     val items: StateFlow<List<Broadcast>> = _items
 
@@ -46,6 +48,23 @@ object ScheduleRepository {
     /** Downloads the current season's schedule. Returns the number of Arabic entries. */
     suspend fun refresh(ctx: Context): Int = withContext(Dispatchers.IO) {
         var lastError: Exception? = null
+        // 1) Daily copy kept in the project's GitHub repo (EiBi's own site has an outdated certificate)
+        try {
+            val text = Http.getText(MIRROR_URL, Charsets.ISO_8859_1)
+            val (list, lines) = parse(text)
+            if (list.size >= 10) {
+                File(ctx.filesDir, CACHE_FILE).writeText(lines.joinToString("\n"))
+                val src = text.lineSequence().firstOrNull { it.startsWith("# source=") }
+                    ?.removePrefix("# source=")?.trim()?.uppercase() ?: "EiBi"
+                Prefs.setScheduleSource(ctx, src)
+                _items.value = list
+                loaded = true
+                return@withContext list.size
+            }
+        } catch (e: Exception) {
+            lastError = e
+        }
+        // 2) EiBi directly
         for (code in seasonCodes(LocalDate.now(ZoneOffset.UTC))) {
             for (base in listOf("http://www.eibispace.de/dx/", "https://www.eibispace.de/dx/")) {
                 try {
