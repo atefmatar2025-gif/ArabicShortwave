@@ -37,6 +37,24 @@ object Prefs {
     fun scheduleSource(ctx: Context): String = sp(ctx).getString("sched_src", "") ?: ""
     fun setScheduleSource(ctx: Context, v: String) = sp(ctx).edit().putString("sched_src", v).apply()
 
+    fun onlineFavorites(ctx: Context): List<OnlineStation> {
+        val raw = sp(ctx).getString("online_favs", null) ?: return emptyList()
+        return runCatching {
+            val a = org.json.JSONArray(raw)
+            (0 until a.length()).mapNotNull { OnlineStation.fromJson(a.getJSONObject(it)) }
+        }.getOrDefault(emptyList())
+    }
+
+    fun toggleOnlineFavorite(ctx: Context, st: OnlineStation): List<OnlineStation> {
+        val list = onlineFavorites(ctx).toMutableList()
+        val removed = list.removeAll { it.uuid == st.uuid }
+        if (!removed) list.add(0, st)
+        val a = org.json.JSONArray()
+        list.forEach { a.put(it.toJson()) }
+        sp(ctx).edit().putString("online_favs", a.toString()).apply()
+        return list
+    }
+
     fun pendingAlertStart(ctx: Context): Long = sp(ctx).getLong("pending_alert", 0L)
     fun setPendingAlertStart(ctx: Context, v: Long) = sp(ctx).edit().putLong("pending_alert", v).apply()
 }

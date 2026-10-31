@@ -73,6 +73,18 @@ fun PlayerScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            if (state.isStream) {
+                item { StreamHeader(state) }
+                item { SignalCard(state) }
+                item {
+                    OutlinedButton(onClick = onStop) {
+                        Icon(Icons.Filled.Stop, null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("إيقاف")
+                    }
+                }
+                return@LazyColumn
+            }
             item { StationHeader(state) }
             item { SignalCard(state) }
             item {
@@ -138,6 +150,27 @@ private fun StationHeader(s: PlayerState) {
                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                 style = MaterialTheme.typography.bodyMedium,
             )
+        }
+    }
+}
+
+@Composable
+private fun StreamHeader(s: PlayerState) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+        shape = RoundedCornerShape(20.dp),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
+            Text("إذاعة إنترنت", color = Amber, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text(s.station, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+            if (s.streamInfo.isNotBlank()) {
+                Text(
+                    s.streamInfo,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }

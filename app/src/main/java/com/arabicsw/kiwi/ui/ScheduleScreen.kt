@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arabicsw.kiwi.data.Broadcast
 import com.arabicsw.kiwi.data.Geo
+import com.arabicsw.kiwi.data.OnlineStation
 import com.arabicsw.kiwi.player.PlayerPhase
 import com.arabicsw.kiwi.player.PlayerService
 import com.arabicsw.kiwi.player.PlayerState
@@ -69,7 +71,9 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-private enum class Tab(val label: String) { LIVE("على الهواء"), NEXT("خلال 24 ساعة"), FAV("المفضلة"), ALL("الكل") }
+private enum class Tab(val label: String) {
+    LIVE("على الهواء"), NET("إذاعات الإنترنت"), NEXT("خلال 24 ساعة"), FAV("المفضلة"), ALL("الكل")
+}
 
 private data class RowItem(val b: Broadcast, val live: Boolean, val next: ZonedDateTime?)
 
@@ -79,6 +83,7 @@ fun ScheduleScreen(
     vm: MainViewModel,
     player: PlayerState,
     onPlay: (Broadcast) -> Unit,
+    onPlayStream: (OnlineStation) -> Unit,
     onOpenPlayer: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -108,6 +113,7 @@ fun ScheduleScreen(
                     Tab.NEXT -> r.live || (r.next != null && r.next.isBefore(limit))
                     Tab.FAV -> r.b.station in favs
                     Tab.ALL -> true
+                    Tab.NET -> false
                 }
             }
             .sortedWith(
@@ -119,6 +125,10 @@ fun ScheduleScreen(
                 }
             )
             .toList()
+    }
+
+    LaunchedEffect(tab, query) {
+        if (tab == Tab.NET) vm.loadOnline(query.trim())
     }
 
     Scaffold(
@@ -140,7 +150,9 @@ fun ScheduleScreen(
                     if (loading) {
                         CircularProgressIndicator(Modifier.padding(12.dp).size(22.dp), strokeWidth = 2.dp)
                     } else {
-                        IconButton(onClick = vm::refresh) { Icon(Icons.Filled.Refresh, "تحديث الجدول") }
+                        IconButton(onClick = {
+                            if (tab == Tab.NET) vm.loadOnline(query.trim(), force = true) else vm.refresh()
+                        }) { Icon(Icons.Filled.Refresh, "تحديث") }
                     }
                     IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, "الإعدادات") }
                 },
@@ -157,7 +169,9 @@ fun ScheduleScreen(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
-                placeholder = { Text("ابحث باسم المحطة أو التردد أو المنطقة") },
+                placeholder = {
+                    Text(if (tab == Tab.NET) "ابحث عن أي إذاعة: KBS، مونت كارلو، Medi1…" else "ابحث باسم المحطة أو التردد أو المنطقة")
+                },
                 shape = RoundedCornerShape(14.dp),
             )
             Row(
@@ -182,7 +196,9 @@ fun ScheduleScreen(
                 }
             }
 
-            if (rows.isEmpty()) {
+            if (tab == Tab.NET) {
+                OnlineList(vm = vm, query = query.trim(), onPlay = onPlayStream)
+            } else if (rows.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                     Text(
                         when {
@@ -304,6 +320,131 @@ private fun BroadcastRow(r: RowItem, now: ZonedDateTime, fav: Boolean, onFav: ()
 }
 
 @Composable
+private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation) -> Unit) {
+    val list by vm.online.collectAsStateWithLifecycle()
+    val loading by vm.onlineLoading.collectAsStateWithLifecycle()
+    val err by vm.onlineError.collectAsStateWithLifecycle()
+    val favs by vm.onlineFavorites.collectAsStateWithLifecycle()
+    val favIds = remember(favs) { favs.map { it.uuid }.toSet() }
+    val shownFavs = if (query.isEmpty()) favs else emptyList()
+    val rest = remember(list, favIds, shownFavs) {
+        if (shownFavs.isEmpty()) list else list.filter { it.uuid !in favIds }
+    }
+
+    LazyColumn(
+        contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            Text(
+                "بث مباشر عبر الإنترنت لإذاعات FM والأقمار الصناعية — ليس استقبالاً لاسلكياً.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+        err?.let { msg ->
+            item {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(msg, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Spacer(Modifier.height(6.dp))
+                        Button(onClick = { vm.loadOnline(query, force = true) }) { Text("إعادة المحاولة") }
+                    }
+                }
+            }
+        }
+        if (shownFavs.isNotEmpty()) {
+            item { Text("المفضلة", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(4.dp)) }
+            items(shownFavs, key = { "f" + it.uuid }) { st ->
+                OnlineRow(st, fav = true, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
+            }
+            item {
+                Text(
+                    "الإذاعات العربية الأكثر استماعاً",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+                )
+            }
+        }
+        if (loading && rest.isEmpty()) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (!loading && rest.isEmpty() && err == null) {
+            item {
+                Text(
+                    if (query.isEmpty()) "لا توجد إذاعات." else "لا توجد إذاعة بهذا الاسم. جرّب كتابة الاسم بالإنجليزية.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+        }
+        items(rest, key = { it.uuid }) { st ->
+            OnlineRow(st, fav = st.uuid in favIds, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
+        }
+        item {
+            Text(
+                "دليل الإذاعات: radio-browser.info",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun OnlineRow(st: OnlineStation, fav: Boolean, onFav: () -> Unit, onPlay: () -> Unit) {
+    Card(
+        onClick = onPlay,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    st.countryCode.ifBlank { "🌐" },
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(st.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (st.info.isNotBlank()) {
+                    Text(
+                        st.info,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (st.quality.isNotBlank()) {
+                    Text(st.quality, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                }
+            }
+            IconButton(onClick = onFav) {
+                if (fav) Icon(Icons.Filled.Star, "إزالة من المفضلة", tint = Amber)
+                else Icon(Icons.Outlined.StarBorder, "إضافة إلى المفضلة")
+            }
+            FilledTonalIconButton(onClick = onPlay) { Icon(Icons.Filled.PlayArrow, "استمع") }
+        }
+    }
+}
+
+@Composable
 private fun MiniPlayer(s: PlayerState, onOpen: () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.primary,
@@ -312,7 +453,11 @@ private fun MiniPlayer(s: PlayerState, onOpen: () -> Unit) {
     ) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("${s.station} • ${PlayerService.freqText(s.freqKhz)}", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                Text(
+                    if (s.isStream) s.station else "${s.station} • ${PlayerService.freqText(s.freqKhz)}",
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
                 Text(s.status, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (s.phase == PlayerPhase.SEARCHING || s.phase == PlayerPhase.CONNECTING) {

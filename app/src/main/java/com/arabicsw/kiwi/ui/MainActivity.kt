@@ -75,6 +75,10 @@ class MainActivity : ComponentActivity() {
                     vm.play(b)
                     showPlayer = true
                 },
+                onPlayStream = { st ->
+                    vm.playStream(st)
+                    showPlayer = true
+                },
                 onOpenPlayer = { showPlayer = true },
                 onSettings = { showSettings = true },
             )

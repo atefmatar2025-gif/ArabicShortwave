@@ -18,7 +18,15 @@ import com.arabicsw.kiwi.audio.KiwiClient
 import com.arabicsw.kiwi.data.Broadcast
 import com.arabicsw.kiwi.data.Geo
 import com.arabicsw.kiwi.data.KiwiDirectory
+import com.arabicsw.kiwi.data.OnlineRadio
+import com.arabicsw.kiwi.data.OnlineStation
 import com.arabicsw.kiwi.data.Prefs
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.arabicsw.kiwi.data.RankedReceiver
 import com.arabicsw.kiwi.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
@@ -46,6 +54,9 @@ data class PlayerState(
     val mode: String = "am",
     /** What receiver distances are measured from (target area, or transmitter for mediumwave). */
     val refLabel: String = "من منطقة البث",
+    /** true = internet stream (no KiwiSDR receivers involved). */
+    val isStream: Boolean = false,
+    val streamInfo: String = "",
 ) {
     val active: Boolean get() = phase != PlayerPhase.IDLE
     val current: RankedReceiver? get() = candidates.getOrNull(index)
@@ -70,6 +81,8 @@ class PlayerService : Service() {
     private var rssiEma = Float.NaN
     private var lastRssiPush = 0L
 
+    private var exo: ExoPlayer? = null
+
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
 
@@ -81,8 +94,13 @@ class PlayerService : Service() {
                 goForeground("جارٍ البحث عن مستقبل…")
                 startPlayback(intent)
             }
+            ACTION_STREAM -> {
+                goForeground("جارٍ تحميل البث…")
+                startStream(intent)
+            }
             ACTION_NEXT -> {
                 val s = _state.value
+                if (s.isStream) return START_NOT_STICKY
                 if (s.candidates.isNotEmpty()) connect((s.index + 1) % s.candidates.size, manual = true)
             }
             ACTION_SELECT -> {
@@ -90,6 +108,7 @@ class PlayerService : Service() {
                 if (i in _state.value.candidates.indices) connect(i, manual = true)
             }
             ACTION_MODE -> {
+                if (_state.value.isStream) return START_NOT_STICKY
                 val m = intent.getStringExtra(EXTRA_MODE) ?: "am"
                 Prefs.setMode(this, m)
                 _state.value = _state.value.copy(mode = m)
@@ -115,6 +134,7 @@ class PlayerService : Service() {
         val itu = intent.getStringExtra(EXTRA_ITU).orEmpty()
         val time = intent.getStringExtra(EXTRA_TIME).orEmpty()
 
+        releaseExo()
         client?.stop(); client = null
         generation++
         autoFailovers = 0
@@ -149,6 +169,68 @@ class PlayerService : Service() {
             _state.value = _state.value.copy(candidates = ranked)
             connect(0, manual = false)
         }
+    }
+
+    private fun startStream(intent: Intent) {
+        val name = intent.getStringExtra(EXTRA_STATION) ?: "?"
+        val url = intent.getStringExtra(EXTRA_URL) ?: return
+        val hls = intent.getBooleanExtra(EXTRA_HLS, false)
+        val info = intent.getStringExtra(EXTRA_INFO).orEmpty()
+
+        searchJob?.cancel()
+        client?.stop(); client = null
+        generation++
+        releaseExo()
+        acquireLocks()
+
+        _state.value = PlayerState(
+            phase = PlayerPhase.CONNECTING,
+            station = name,
+            status = "جارٍ تحميل البث…",
+            isStream = true,
+            streamInfo = info,
+        )
+        updateNotification()
+
+        val item = MediaItem.Builder().setUri(url).apply {
+            if (hls) setMimeType(MimeTypes.APPLICATION_M3U8)
+        }.build()
+        val p = ExoPlayer.Builder(this).build()
+        p.setAudioAttributes(
+            androidx.media3.common.AudioAttributes.Builder()
+                .setUsage(C.USAGE_MEDIA)
+                .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                .build(),
+            true,
+        )
+        p.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(state: Int) {
+                if (exo !== p) return
+                when (state) {
+                    Player.STATE_BUFFERING -> _state.value = _state.value.copy(
+                        phase = if (_state.value.phase == PlayerPhase.PLAYING) PlayerPhase.PLAYING else PlayerPhase.CONNECTING,
+                        status = "جارٍ التحميل…",
+                    )
+                    Player.STATE_READY -> _state.value = _state.value.copy(phase = PlayerPhase.PLAYING, status = "يعمل الآن")
+                    Player.STATE_ENDED -> setError("انتهى البث")
+                }
+                updateNotification()
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                if (exo !== p) return
+                setError("تعذّر تشغيل هذه الإذاعة الآن. جرّب إذاعة أخرى.")
+            }
+        })
+        exo = p
+        p.setMediaItem(item)
+        p.prepare()
+        p.playWhenReady = true
+    }
+
+    private fun releaseExo() {
+        exo?.let { runCatching { it.stop(); it.release() } }
+        exo = null
     }
 
     private fun connect(i: Int, manual: Boolean) {
@@ -230,6 +312,7 @@ class PlayerService : Service() {
     }
 
     private fun setError(msg: String) {
+        releaseExo()
         client?.stop(); client = null
         _state.value = _state.value.copy(phase = PlayerPhase.ERROR, status = msg, rssi = null)
         updateNotification()
@@ -238,6 +321,7 @@ class PlayerService : Service() {
 
     private fun stopEverything() {
         searchJob?.cancel()
+        releaseExo()
         client?.stop(); client = null
         generation++
         _state.value = PlayerState()
@@ -247,6 +331,7 @@ class PlayerService : Service() {
     }
 
     override fun onDestroy() {
+        releaseExo()
         client?.stop(); client = null
         _state.value = PlayerState()
         releaseLocks()
@@ -284,8 +369,13 @@ class PlayerService : Service() {
             this, 2, Intent(this, PlayerService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val title = if (s.station.isNotEmpty()) "${s.station} • ${freqText(s.freqKhz)}" else "موجات عربية"
-        val sub = s.current?.rx?.location?.takeIf { it.isNotBlank() } ?: s.current?.rx?.name.orEmpty()
+        val title = when {
+            s.station.isEmpty() -> "موجات عربية"
+            s.isStream -> s.station
+            else -> "${s.station} • ${freqText(s.freqKhz)}"
+        }
+        val sub = if (s.isStream) "إذاعة إنترنت"
+                  else s.current?.rx?.location?.takeIf { it.isNotBlank() } ?: s.current?.rx?.name.orEmpty()
         return NotificationCompat.Builder(this, App.CH_PLAYER)
             .setSmallIcon(R.drawable.ic_stat_radio)
             .setContentTitle(title)
@@ -296,7 +386,7 @@ class PlayerService : Service() {
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .addAction(0, "مستقبل آخر", next)
+            .apply { if (!s.isStream) addAction(0, "مستقبل آخر", next) }
             .addAction(0, "إيقاف", stop)
             .build()
     }
@@ -328,6 +418,10 @@ class PlayerService : Service() {
         const val ACTION_SELECT = "select"
         const val ACTION_MODE = "mode"
         const val ACTION_STOP = "stop"
+        const val ACTION_STREAM = "stream"
+        const val EXTRA_URL = "url"
+        const val EXTRA_HLS = "hls"
+        const val EXTRA_INFO = "info"
         const val EXTRA_STATION = "station"
         const val EXTRA_FREQ = "freq"
         const val EXTRA_TARGET = "target"
@@ -361,6 +455,18 @@ class PlayerService : Service() {
 
         fun play(ctx: Context, b: Broadcast) =
             ContextCompat.startForegroundService(ctx, playIntent(ctx, b))
+
+        fun playStream(ctx: Context, st: OnlineStation) {
+            OnlineRadio.countClick(st.uuid)
+            ContextCompat.startForegroundService(
+                ctx,
+                Intent(ctx, PlayerService::class.java).setAction(ACTION_STREAM)
+                    .putExtra(EXTRA_STATION, st.name)
+                    .putExtra(EXTRA_URL, st.url)
+                    .putExtra(EXTRA_HLS, st.hls)
+                    .putExtra(EXTRA_INFO, listOf(st.info, st.quality).filter { it.isNotBlank() }.joinToString(" • ")),
+            )
+        }
 
         fun command(ctx: Context, action: String, extras: Intent.() -> Unit = {}) {
             if (!_state.value.active) return

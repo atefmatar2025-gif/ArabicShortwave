@@ -5,7 +5,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.arabicsw.kiwi.alerts.AlertScheduler
 import com.arabicsw.kiwi.data.Broadcast
+import com.arabicsw.kiwi.data.OnlineRadio
+import com.arabicsw.kiwi.data.OnlineStation
 import com.arabicsw.kiwi.data.Prefs
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import com.arabicsw.kiwi.data.ScheduleRepository
 import com.arabicsw.kiwi.player.PlayerService
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +77,38 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    // ---- internet radio
+    val online = MutableStateFlow<List<OnlineStation>>(emptyList())
+    val onlineLoading = MutableStateFlow(false)
+    val onlineError = MutableStateFlow<String?>(null)
+    val onlineFavorites = MutableStateFlow(Prefs.onlineFavorites(app))
+    private var onlineJob: Job? = null
+
+    fun loadOnline(query: String, force: Boolean = false) {
+        onlineJob?.cancel()
+        val job = viewModelScope.launch {
+            if (query.isNotBlank()) delay(450)   // wait until the user stops typing
+            onlineLoading.value = true
+            onlineError.value = null
+            try {
+                online.value = if (query.isBlank()) OnlineRadio.arabic(ctx, force) else OnlineRadio.search(query)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                onlineError.value = "تعذّر تحميل قائمة الإذاعات: ${e.message ?: e.javaClass.simpleName}"
+            } finally {
+                if (onlineJob === coroutineContext[Job]) onlineLoading.value = false
+            }
+        }
+        onlineJob = job
+    }
+
+    fun toggleOnlineFavorite(st: OnlineStation) {
+        onlineFavorites.value = Prefs.toggleOnlineFavorite(ctx, st)
+    }
+
+    fun playStream(st: OnlineStation) = PlayerService.playStream(ctx, st)
 
     fun toggleFavorite(station: String) {
         favorites.value = Prefs.toggleFavorite(ctx, station)
