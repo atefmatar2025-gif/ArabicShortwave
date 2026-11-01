@@ -12,6 +12,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,24 +53,9 @@ class MainActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT >= 33) notifPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
-        if (showPlayer && player.active) {
-            BackHandler { showPlayer = false }
-            PlayerScreen(
-                state = player,
-                onClose = { showPlayer = false },
-                onNext = { PlayerService.command(this, PlayerService.ACTION_NEXT) },
-                onStop = {
-                    PlayerService.command(this, PlayerService.ACTION_STOP)
-                    showPlayer = false
-                },
-                onSelect = { i ->
-                    PlayerService.command(this, PlayerService.ACTION_SELECT) { putExtra(PlayerService.EXTRA_INDEX, i) }
-                },
-                onMode = { m ->
-                    PlayerService.command(this, PlayerService.ACTION_MODE) { putExtra(PlayerService.EXTRA_MODE, m) }
-                },
-            )
-        } else {
+        // The list screen always stays composed, so its tab, country, search text and
+        // scroll position survive opening and closing the player.
+        Box(Modifier.fillMaxSize()) {
             ScheduleScreen(
                 vm = vm,
                 player = player,
@@ -76,12 +64,31 @@ class MainActivity : ComponentActivity() {
                     showPlayer = true
                 },
                 onPlayStream = { st ->
-                    vm.playStream(st)
-                    showPlayer = true
+                    val p = PlayerService.state.value
+                    if (p.active && p.isStream && p.station == st.name) showPlayer = true   // tap again = open it
+                    else vm.playStream(st)                                                  // stay in the list
                 },
                 onOpenPlayer = { showPlayer = true },
                 onSettings = { showSettings = true },
             )
+            if (showPlayer && player.active) {
+                BackHandler { showPlayer = false }
+                PlayerScreen(
+                    state = player,
+                    onClose = { showPlayer = false },
+                    onNext = { PlayerService.command(this@MainActivity, PlayerService.ACTION_NEXT) },
+                    onStop = {
+                        PlayerService.command(this@MainActivity, PlayerService.ACTION_STOP)
+                        showPlayer = false
+                    },
+                    onSelect = { i ->
+                        PlayerService.command(this@MainActivity, PlayerService.ACTION_SELECT) { putExtra(PlayerService.EXTRA_INDEX, i) }
+                    },
+                    onMode = { m ->
+                        PlayerService.command(this@MainActivity, PlayerService.ACTION_MODE) { putExtra(PlayerService.EXTRA_MODE, m) }
+                    },
+                )
+            }
         }
 
         if (showSettings) {

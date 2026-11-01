@@ -204,7 +204,12 @@ fun ScheduleScreen(
             }
 
             if (tab == Tab.NET) {
-                OnlineList(vm = vm, query = query.trim(), onPlay = onPlayStream)
+                OnlineList(
+                    vm = vm,
+                    query = query.trim(),
+                    playing = if (player.active && player.isStream) player.station else null,
+                    onPlay = onPlayStream,
+                )
             } else if (rows.isEmpty()) {
                 Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -289,7 +294,7 @@ private fun BroadcastRow(r: RowItem, now: ZonedDateTime, fav: Boolean, onFav: ()
                     )
                 }
                 Text(
-                    "${b.localRange()} محلي • ${b.utcRange()}",
+                    if (b.durationMin >= 1440) "على مدار الساعة" else "${b.localRange()} محلي • ${b.utcRange()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -343,7 +348,7 @@ private fun countryName(code: String) = when (code) {
 }
 
 @Composable
-private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation) -> Unit) {
+private fun OnlineList(vm: MainViewModel, query: String, playing: String?, onPlay: (OnlineStation) -> Unit) {
     val country by vm.onlineCountry.collectAsStateWithLifecycle()
     val list by vm.online.collectAsStateWithLifecycle()
     val loading by vm.onlineLoading.collectAsStateWithLifecycle()
@@ -404,7 +409,7 @@ private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation)
         if (shownFavs.isNotEmpty()) {
             item { Text("المفضلة", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(4.dp)) }
             items(shownFavs, key = { "f" + it.uuid }) { st ->
-                OnlineRow(st, fav = true, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
+                OnlineRow(st, fav = true, playing = st.name == playing, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
             }
             item {
                 Text(
@@ -434,7 +439,7 @@ private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation)
             }
         }
         items(rest, key = { it.uuid }) { st ->
-            OnlineRow(st, fav = st.uuid in favIds, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
+            OnlineRow(st, fav = st.uuid in favIds, playing = st.name == playing, onFav = { vm.toggleOnlineFavorite(st) }, onPlay = { onPlay(st) })
         }
         item {
             Text(
@@ -448,10 +453,12 @@ private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation)
 }
 
 @Composable
-private fun OnlineRow(st: OnlineStation, fav: Boolean, onFav: () -> Unit, onPlay: () -> Unit) {
+private fun OnlineRow(st: OnlineStation, fav: Boolean, playing: Boolean, onFav: () -> Unit, onPlay: () -> Unit) {
     Card(
         onClick = onPlay,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(
+            containerColor = if (playing) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
@@ -482,7 +489,9 @@ private fun OnlineRow(st: OnlineStation, fav: Boolean, onFav: () -> Unit, onPlay
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (st.quality.isNotBlank()) {
+                if (playing) {
+                    Text("● يعمل الآن — اضغط لفتح شاشة الاستماع", style = MaterialTheme.typography.labelSmall, color = OnAir)
+                } else if (st.quality.isNotBlank()) {
                     Text(st.quality, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
                 }
             }
