@@ -55,6 +55,10 @@ object Prefs {
         return list
     }
 
+    /** "" = Arabic-language top list, otherwise an ISO country code. */
+    fun onlineCountry(ctx: Context): String = sp(ctx).getString("online_country", "") ?: ""
+    fun setOnlineCountry(ctx: Context, v: String) = sp(ctx).edit().putString("online_country", v).apply()
+
     fun pendingAlertStart(ctx: Context): Long = sp(ctx).getLong("pending_alert", 0L)
     fun setPendingAlertStart(ctx: Context, v: Long) = sp(ctx).edit().putLong("pending_alert", v).apply()
 }

@@ -83,16 +83,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val onlineLoading = MutableStateFlow(false)
     val onlineError = MutableStateFlow<String?>(null)
     val onlineFavorites = MutableStateFlow(Prefs.onlineFavorites(app))
+    val onlineCountry = MutableStateFlow(Prefs.onlineCountry(app))
+
+    fun setOnlineCountry(code: String) {
+        Prefs.setOnlineCountry(ctx, code)
+        onlineCountry.value = code
+    }
     private var onlineJob: Job? = null
 
     fun loadOnline(query: String, force: Boolean = false) {
         onlineJob?.cancel()
+        val country = onlineCountry.value
         val job = viewModelScope.launch {
-            if (query.isNotBlank()) delay(450)   // wait until the user stops typing
+            if (query.isNotBlank() && country.isEmpty()) delay(450)   // wait until the user stops typing
             onlineLoading.value = true
             onlineError.value = null
             try {
-                online.value = if (query.isBlank()) OnlineRadio.arabic(ctx, force) else OnlineRadio.search(query)
+                online.value = when {
+                    // a country is selected: its full list, filtered locally (works with Arabic names too)
+                    country.isNotEmpty() -> OnlineRadio.byCountry(ctx, country, force).let { all ->
+                        if (query.isBlank()) all
+                        else all.filter { it.name.contains(query, ignoreCase = true) || it.tags.contains(query, ignoreCase = true) }
+                    }
+                    query.isBlank() -> OnlineRadio.arabic(ctx, force)
+                    else -> OnlineRadio.search(query)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

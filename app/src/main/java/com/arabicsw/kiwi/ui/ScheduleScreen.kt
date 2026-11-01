@@ -127,7 +127,8 @@ fun ScheduleScreen(
             .toList()
     }
 
-    LaunchedEffect(tab, query) {
+    val country by vm.onlineCountry.collectAsStateWithLifecycle()
+    LaunchedEffect(tab, query, country) {
         if (tab == Tab.NET) vm.loadOnline(query.trim())
     }
 
@@ -170,7 +171,13 @@ fun ScheduleScreen(
                 singleLine = true,
                 leadingIcon = { Icon(Icons.Filled.Search, null) },
                 placeholder = {
-                    Text(if (tab == Tab.NET) "ابحث عن أي إذاعة: KBS، مونت كارلو، Medi1…" else "ابحث باسم المحطة أو التردد أو المنطقة")
+                    Text(
+                        when {
+                            tab != Tab.NET -> "ابحث باسم المحطة أو التردد أو المنطقة"
+                            country.isEmpty() -> "ابحث عن أي إذاعة: KBS، مونت كارلو، Medi1…"
+                            else -> "ابحث داخل إذاعات ${countryName(country)}"
+                        }
+                    )
                 },
                 shape = RoundedCornerShape(14.dp),
             )
@@ -319,14 +326,31 @@ private fun BroadcastRow(r: RowItem, now: ZonedDateTime, fav: Boolean, onFav: ()
     }
 }
 
+private val COUNTRIES = listOf(
+    "" to "🌍 عربية",
+    "PS" to "🇵🇸 فلسطين",
+    "MA" to "🇲🇦 المغرب",
+    "EG" to "🇪🇬 مصر",
+    "DZ" to "🇩🇿 الجزائر",
+)
+
+private fun countryName(code: String) = when (code) {
+    "PS" -> "فلسطين"
+    "MA" -> "المغرب"
+    "EG" -> "مصر"
+    "DZ" -> "الجزائر"
+    else -> code
+}
+
 @Composable
 private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation) -> Unit) {
+    val country by vm.onlineCountry.collectAsStateWithLifecycle()
     val list by vm.online.collectAsStateWithLifecycle()
     val loading by vm.onlineLoading.collectAsStateWithLifecycle()
     val err by vm.onlineError.collectAsStateWithLifecycle()
     val favs by vm.onlineFavorites.collectAsStateWithLifecycle()
     val favIds = remember(favs) { favs.map { it.uuid }.toSet() }
-    val shownFavs = if (query.isEmpty()) favs else emptyList()
+    val shownFavs = if (query.isEmpty() && country.isEmpty()) favs else emptyList()
     val rest = remember(list, favIds, shownFavs) {
         if (shownFavs.isEmpty()) list else list.filter { it.uuid !in favIds }
     }
@@ -335,6 +359,29 @@ private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation)
         contentPadding = PaddingValues(start = 12.dp, end = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        item {
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()).padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                COUNTRIES.forEach { (code, label) ->
+                    FilterChip(
+                        selected = country == code,
+                        onClick = { vm.setOnlineCountry(code) },
+                        label = { Text(label) },
+                    )
+                }
+            }
+        }
+        if (country.isNotEmpty() && !loading && err == null && rest.isNotEmpty()) {
+            item {
+                Text(
+                    "إذاعات ${countryName(country)}: ${rest.size}",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
+            }
+        }
         item {
             Text(
                 "بث مباشر عبر الإنترنت لإذاعات FM والأقمار الصناعية — ليس استقبالاً لاسلكياً.",
@@ -376,7 +423,11 @@ private fun OnlineList(vm: MainViewModel, query: String, onPlay: (OnlineStation)
         } else if (!loading && rest.isEmpty() && err == null) {
             item {
                 Text(
-                    if (query.isEmpty()) "لا توجد إذاعات." else "لا توجد إذاعة بهذا الاسم. جرّب كتابة الاسم بالإنجليزية.",
+                    when {
+                        query.isEmpty() -> "لا توجد إذاعات."
+                        country.isNotEmpty() -> "لا توجد إذاعة بهذا الاسم في ${countryName(country)}."
+                        else -> "لا توجد إذاعة بهذا الاسم. جرّب كتابة الاسم بالإنجليزية."
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(16.dp),
                 )

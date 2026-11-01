@@ -109,6 +109,23 @@ object OnlineRadio {
         parse(text).also { arabicCache = it; arabicAt = now }
     }
 
+    private val countryCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, List<OnlineStation>>>()
+
+    /** Every working station the directory lists for a country (ISO code, e.g. "PS"). */
+    suspend fun byCountry(ctx: Context, code: String, force: Boolean = false): List<OnlineStation> =
+        withContext(Dispatchers.IO) {
+            val now = System.currentTimeMillis()
+            countryCache[code]?.let { (at, list) -> if (!force && now - at < MAX_AGE_MS) return@withContext list }
+            val cache = File(ctx.filesDir, "online_$code.json")
+            val text = try {
+                fetch("/json/stations/search?countrycode=$code&hidebroken=true&order=clickcount&reverse=true&limit=1000")
+                    .also { cache.writeText(it) }
+            } catch (e: Exception) {
+                if (cache.exists()) cache.readText() else throw e
+            }
+            parse(text).also { countryCache[code] = now to it }
+        }
+
     /** Search all stations worldwide by name (e.g. "KBS", "Monte Carlo", "Medi1"). */
     suspend fun search(query: String): List<OnlineStation> = withContext(Dispatchers.IO) {
         val q = URLEncoder.encode(query.trim(), "UTF-8")
