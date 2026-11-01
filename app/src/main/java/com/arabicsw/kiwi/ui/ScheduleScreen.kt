@@ -72,7 +72,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 private enum class Tab(val label: String) {
-    LIVE("على الهواء"), NET("إذاعات الإنترنت"), NEXT("خلال 24 ساعة"), FAV("المفضلة"), ALL("الكل")
+    NET("إذاعات الإنترنت"), LIVE("على الهواء"), NEXT("خلال 24 ساعة"), FAV("المفضلة"), ALL("الكل")
 }
 
 private data class RowItem(val b: Broadcast, val live: Boolean, val next: ZonedDateTime?)
@@ -94,7 +94,7 @@ fun ScheduleScreen(
     val now by vm.now.collectAsStateWithLifecycle()
     val source by vm.source.collectAsStateWithLifecycle()
 
-    var tab by rememberSaveable { mutableStateOf(Tab.LIVE) }
+    var tab by rememberSaveable { mutableStateOf(Tab.NET) }
     var query by rememberSaveable { mutableStateOf("") }
 
     val rows = remember(all, favs, now, tab, query) {
