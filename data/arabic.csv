@@ -1,4 +1,4 @@
-# source=EiBi sked-a26
+# source=EiBi sked-b26
 531;0450-1330;;ALG;R.Algiers Int.;A,F;NAf;fk;1;;
 531;1430-1600;;ALG;R.Algiers Int.;A;NAf;fk;1;;
 531;1630-1700;;ALG;R.Algiers Int.;A;NAf;fk;1;;
@@ -47,28 +47,32 @@
 3325;1600-1700;;INS;Voice of Indonesia;A;INS;p;8;;[0521]
 4755;1600-1700;;INS;Voice of Indonesia;A;INS;j;1;;[1224]
 5900;1930-2000;;CAN;Bible Voice;A;ME;/BUL-s;0;;
-6040;0000-0600;;ALG;Ifrikya FM;A;WAf;o;0;;
+6020;0300-0600;;ALG;Ifrikya FM;A;CAf;b;0;;
+6040;0000-0700;;ALG;Ifrikya FM;A;WAf;o;0;;
 6090;2000-2100;;KOR;KBS World Radio;A;NAf;/G-w;0;;
-6100;2000-2200;;CHN;China Radio Int.;A;ME;x;0;;
-7300;2115-2145;Su;AUS;HCJB R.Akhbar Mufriha;A;NAf;/G-w;6;2903;3009[0525]
+6100;2000-2200;;CHN;China Radio Int.;A;NAf;x;0;;
+7255;1500-1600;;TUR;Voice of Turkey;A;ME;e;0;;
+7300;1600-1800;;CHN;China Radio Int.;A;NAf;ka;0;;
 7315;2000-2030;Su;USA;Follow the Bible Min.;A;NAf;/G-w;4;;[1125]
-7380;2000-2030;Su;USA;Follow the Bible Min.;A;NAf;/G-w;6;2903;0309[0526]
-7380;2000-2030;Su;USA;Follow the Bible Min.;A;NAf;/ASC;6;0409;2209
-7380;2000-2030;Su;USA;Follow the Bible Min.;A;NAf;/G-w;6;2309;2510
+7380;2000-2030;Su;USA;Follow the Bible Min.;A;NAf;/G-w;1;;
 9400;1945-2000;;CAN;Bible Voice Dardasha-7;A;NAf;/BUL-s;1;;[0725]
 9410;2000-2030;Su;USA;Follow the Bible Min.;A;ME;/ASC;5;;[0526]
-9490;1730-1745;;CAN;Bible Voice;A;ME;/BUL-s;0;;
-9490;1745-1750;Mo,We;CAN;Bible Voice;A;ME;/BUL-s;0;;
-9500;0300-0700;;ALG;Ifrikya FM;A;CAf;b;0;;
-9540;1400-1500;;TUR;Voice of Turkey;A;ME;e;0;;
+9440;0600-0615;;CAN;Bible Voice;A;NAf;/D-n;0;;
+9450;0500-0515;Fr;CAN;Bible Voice;A;ME;/D-n;0;;
+9490;1730-1745;24567;CAN;Bible Voice;A;ME;/BUL-s;0;;
+9490;1730-1750;Mo,We;CAN;Bible Voice;A;ME;/BUL-s;0;;
+9500;0600-0700;;ALG;Ifrikya FM;A;CAf;b;0;;
 9585;1830-1900;Su;USA;Follow the Bible Min.;A;ME;/CVA;5;;[0824]
 9585;1830-1900;Su;USA;Follow the Bible Min.;A;ME;/G-w;4;;[0126]
-9620;1730-1930;;IND;AIR Akashvani Ext.Sce;A;ME;b;1;;[0726]
+9605;1610-1630;;J;NHK Radio Japan;A;ME;y;0;;
+9640;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+9650;1500-1530;Su-Th;G;BBC;A;ME;/OMA-a;0;;
 9690;2100-2200;Fr;E;Radio Exterior España;A;NAm;n;4;;
-9690;1600-1700;;INS;Voice of Indonesia;A;INS;j;1;2007;[0925]
-9700;2200-0700;;ALG;Ifrikya FM;A;WAf;o;0;;
-9840;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-9885;2330-0045;;EGY;Radio Cairo;A;SAm;a;0;;
+9690;1600-1700;;INS;Voice of Indonesia;A;INS;j;1;;[0925]
+9700;2200-0800;;ALG;Ifrikya FM;A;WAf;o;0;;
+9760;1630-1700;;ROU;Radio Romania Int.;A;ME;t;0;;
+9780;1630-1700;;ROU;Radio Romania Int.;A;ME;t;0;;
+9810;2330-0045;;EGY;Radio Cairo;A;SAm;a;8;;
 9890;1500-1600;;KRE;Voice of Korea;A;ME;u;1;;[0326]
 9890;1700-1800;;KRE;Voice of Korea;A;ME;u;1;;[0724]
 11600;1545-1600;;CAN;Bible Voice;A;ME;/BUL-s;0;;
@@ -77,66 +81,60 @@
 11640;1830-1930;;CHN;China Radio Int.;A;EAf;/MLI;0;;
 11645;1500-1600;;KRE;Voice of Korea;A;ME;u;1;;[0226]
 11645;1700-1800;;KRE;Voice of Korea;A;ME;u;1;;[0425]
-11655;0600-0615;;CAN;Bible Voice;A;NAf;/D-n;0;;
-11700;1200-1230;;ROU;Radio Romania Int.;A;ME;g;0;;
-11750;0900-1000;;TUR;Voice of Turkey;A;ME;e;0;;
 11755;1630-1700;;CVA;Radio Vaticana;A;ME;;4;;
 11805;1900-2000;;USA;Adventist World Radio;A;ME;/GUM-a;0;;
-11830;1500-1530;Su-Th;G;BBC;A;ME;/OMA-a;0;;
-11880;1800-1830;Su;CUB;Radio Habana Cuba;A;CAm;;2;;[0226]
+11830;1500-1530;Su-Th;G;BBC;A;ME;/MDG;0;;
+11870;1700-1900;;S;IBRA Radio;A;EAf;/G-w;0;;
+11880;1900-1930;Su;CUB;Radio Habana Cuba;A;CAm;;2;;[0226]
+11900;1730-1930;;IND;AIR Akashvani Ext.Sce;A;ME;b;1;;
+11955;1000-1100;;TUR;Voice of Turkey;A;ME;e;0;;
 12030;2100-2200;Fr;E;Radio Exterior España;A;ME;n;4;;
-13600;1610-1630;;J;NHK Radio Japan;A;ME;y;0;;
-13640;1900-0300;;ALG;Ifrikya FM;A;CAf;b;0;;[0926]
+13600;1300-1330;;ROU;Radio Romania Int.;A;ME;t;0;;
+13640;1900-0300;;ALG;Ifrikya FM;A;CAf;b;0;;
 13670;1900-2000;;MDG;MWV Radio Feda;A;ME;m;1;;[0726]
 13685;1830-1930;;CHN;China Radio Int.;A;NAf;/MLI;0;;
 13710;2000-2100;;MDG;MWV Radio Feda;A;ME;m;1;;[1225]
-13730;0500-0515;Fr;CAN;Bible Voice;A;ME;/D-n;0;;
-13790;1600-1800;;CHN;China Radio Int.;A;NAf;ka;0;;
 13800;1802-1902;Mo-Fr;SWZ;Trans World Radio;A;EAf;;1;;[0226]
-13855;1900-0100;;ALG;Ifrikya FM;A;WAf;o;0;;[0626]
+13855;1900-0400;;ALG;Ifrikya FM;A;WAf;o;0;;
+15120;0730-0800;;ROU;Radio Romania Int.;A;NAf;g;0;;
+15120;1300-1330;;ROU;Radio Romania Int.;A;NAf;g;0;;
 15125;1600-1700;;CHN;China Radio Int.;A;EAf;/MLI;0;;
-15130;0530-0630;;IND;AIR Akashvani Ext.Sce;A;ME;b;1;;[0426]
-15130;0630-0700;;ROU;Radio Romania Int.;A;NAf;g;0;;
-15130;1200-1230;;ROU;Radio Romania Int.;A;ME;t;0;;
-15130;1530-1600;;ROU;Radio Romania Int.;A;NAf;g;0;;
-15140;0715-1900;;ALG;Ifrikya FM;A;WAf;o;0;;[1026]
-15150;0930-1130;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-15160;1530-1600;;ROU;Radio Romania Int.;A;ME;t;0;;
-15200;0630-0700;;ROU;Radio Romania Int.;A;ME;t;0;;
-15235;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-15240;0600-0830;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;[0526]
-15240;0930-1130;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-15240;1130-1430;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-15240;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
+15135;0600-0830;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15135;0930-1130;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15135;1130-1430;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15135;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15140;0700-1900;;ALG;Ifrikya FM;A;WAf;o;0;;
+15170;1300-1330;;ROU;Radio Romania Int.;A;ME;t;0;;
+15200;0730-0800;;ROU;Radio Romania Int.;A;ME;t;0;;
+15200;1630-1700;;ROU;Radio Romania Int.;A;NAf;g;0;;
+15240;0930-1130;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15240;1130-1430;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15240;1430-1730;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
 15260;1700-1800;;S;IBRA Radio Sama;A;ME;/G-w;1;;[0526]
-15280;1500-1530;Su-Th;G;BBC;A;ME;/MDG;0;;
-15280;1530-1600;;ROU;Radio Romania Int.;A;NAf;g;0;;
-15320;1200-1230;;ROU;Radio Romania Int.;A;NAf;g;0;;
-15360;1530-1600;;ROU;Radio Romania Int.;A;ME;t;0;;
-15380;1130-1430;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
+15280;0530-0630;;IND;AIR Akashvani Ext.Sce;A;ME;b;1;;[0426]
+15320;0830-1020;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15320;0730-0800;;ROU;Radio Romania Int.;A;NAf;g;0;;
+15380;1130-1430;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
 15390;2000-2100;Fr;E;Radio Exterior España;A;Af;n;5;;
-15410;0630-0700;;ROU;Radio Romania Int.;A;NAf;g;0;;
-15430;0600-0830;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;
-15430;0830-1030;;IRN;IRIB Voice of I.R.Iran;A;ME;s;0;;[0926]
-15460;1400-1500;;TUR;Voice of Turkey;A;NAf;e;0;;
+15410;0600-0830;;IRN;IRIB Voice of I.R.Iran;A;ME;s;8;;
+15430;1630-1700;;ROU;Radio Romania Int.;A;NAf;g;0;;
+15460;1300-1330;;ROU;Radio Romania Int.;A;NAf;g;0;;
 15500;2000-2100;Fr;E;Radio Exterior España;A;NAm;n;5;;
 15510;1830-1900;;G;FEBA Radio Sama;A;EAf;/G-w;4;;[0126]
 15520;2000-2100;Fr;E;Radio Exterior España;A;ME;n;5;;
-15565;1330-1500;;CVA;Radio Vaticana;A;ME;;6;2509;2509
-15595;0610-0630;Mo-Sa;CVA;Radio Vaticana;A;ME;;2;;
+15580;0800-1100;irr;CVA;Radio Vaticana;A;ME;;0;;
+15595;0710-0730;Mo-Sa;CVA;Radio Vaticana;A;ME;;2;;
 15595;1530-1600;;CVA;Radio Vaticana;A;ME;;5;;
 15595;1630-1700;;CVA;Radio Vaticana;A;ME;;4;;
-15710;0630-0700;;ROU;Radio Romania Int.;A;ME;t;0;;
-17485;0500-0700;;CHN;China Radio Int.;A;NAf;ka;0;;
-17600;0715-0100;;ALG;Ifrikya FM;A;CAf;b;0;;[0726]
-17670;1700-1730;;S;IBRA Radio Sama;A;EAf;/G-w;5;2808;
+17485;0500-0700;;CHN;China Radio Int.;A;ME;ka;0;;
+17560;0730-0800;;ROU;Radio Romania Int.;A;ME;t;0;;
+17600;0700-0200;;ALG;Ifrikya FM;A;CAf;b;0;;
+17650;1500-1600;;TUR;Voice of Turkey;A;NAf;e;0;;
+17670;1700-1730;;S;IBRA Radio Sama;A;EAf;/G-w;5;;
 17670;1830-1900;;S;IBRA Radio Sama;A;EAf;/G-w;5;;[0526]
-17710;0700-1000;irr;CVA;Radio Vaticana;A;ME;;0;;
 17715;2100-2200;Fr;E;Radio Exterior España;A;SAm;n;4;;
 17715;2000-2100;Fr;E;Radio Exterior España;A;SAm;n;5;;
 17755;2100-2200;Fr;E;Radio Exterior España;A;Af;n;4;;
-17780;1200-1230;;ROU;Radio Romania Int.;A;NAf;t;0;;
 17790;1530-1600;;CVA;Radio Vaticana;A;ME;;5;;
-17810;0700-0730;Su-Th;G;BBC;A;EAf;/OMA-a;6;2903;2107
-17810;0700-0730;Su-Th;G;BBC;A;EAf;/UAE;6;2207;2510
+17810;0700-0730;Su-Th;G;BBC;A;EAf;/CVA;0;;
 17880;1600-1700;;CHN;China Radio Int.;A;NAf;/MLI;0;;
